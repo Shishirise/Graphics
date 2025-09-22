@@ -1,20 +1,12 @@
 ```javascript
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <title>WebGL House</title>
-</head>
 <body>
     <canvas width="750" height="800" id="my_Canvas"></canvas>
 
-    <!-- External JavaScript -->
-    <script src="app.js"></script>
-</body>
-</html>
-var canvas = document.getElementById('my_Canvas');
-var gl = canvas.getContext('webgl');
-var gl =canvas.getContext('experimental-webgl');
+    <script>
+        var canvas = document.getElementById('my_Canvas');
+        var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 
 //  Building
 var building = [
@@ -33,6 +25,7 @@ var doorVertices = [
      0.1, -0.7, 0
 ];
 var doorIndices = [0,1,2, 0,2,3];
+
 
 //Windows 
 var windowVertices = [
@@ -75,22 +68,44 @@ var baseSlabVertices = [
 ];
 var baseSlabIndices = [0,1,2, 0,2,3];
 
-// Brick (simple rectangle)
-var brickVertices = [
-    -0.1,  0.05, 0,   // top-left
-    -0.1, -0.05, 0,   // bottom-left
-     0.1, -0.05, 0,   // bottom-right
-     0.1,  0.05, 0    // top-right
+// Road vertices (below building)
+var roadVertices = [
+    -1, -0.7, 0,  // top-left
+    -1, -1, 0,  // bottom-left
+     1, -1, 0,  // bottom-right
+     1, -0.7, 0   // top-right
 ];
 
-var brickIndices = [
-    0, 1, 2,   // first triangle
-    0, 2, 3    // second triangle
+// Road indices (two triangles)
+var roadIndices = [
+    0, 1, 2,
+    0, 2, 3
 ];
 
-// Draw one brick
-drawShape(brickVertices, brickIndices, [0.7, 0.2, 0.2, 1]); // reddish brick
+var dividerVertices = [];
+var dividerIndices = [];
+var dashWidth = 0.4; // width of each dash
+var gap = 0.1;       // gap between dashes
+var yTop = -0.84;
+var yBottom = -0.86;
+var index = 0;
 
+// Loop across the road width
+for (var x = -1; x < 1; x += dashWidth + gap) {
+    dividerVertices.push(
+        x,       yTop,    0,  // top-left
+        x,       yBottom, 0,  // bottom-left
+        x+dashWidth, yBottom, 0, // bottom-right
+        x+dashWidth, yTop, 0     // top-right
+    );
+
+    dividerIndices.push(
+        index, index+1, index+2,
+        index, index+2, index+3
+    );
+
+    index += 4; 
+}
 
 // Function to draw shapes 
 function drawShape(vertices, indices, color){
@@ -111,9 +126,9 @@ function drawShape(vertices, indices, color){
 
     var fragCode = `
         precision mediump float;
-        uniform vec4 uColor;
+        uniform vec4 Color;
         void main(void){
-            gl_FragColor = uColor;
+            gl_FragColor = Color;
         }`;
 
     var vertShader = gl.createShader(gl.VERTEX_SHADER);
@@ -137,14 +152,14 @@ function drawShape(vertices, indices, color){
     gl.vertexAttribPointer(coord, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(coord);
 
-    var colorLoc = gl.getUniformLocation(shaderProgram, "uColor");
+    var colorLoc = gl.getUniformLocation(shaderProgram, "Color");
     gl.uniform4fv(colorLoc, color);
 
     gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT,0);
 }
 
 // Draw  shapes
-gl.clearColor(0.7, 0.9, 1, 1); // sky
+gl.clearColor(0.7, 0.9, 1, 1); // dim greenish color
 gl.clear(gl.COLOR_BUFFER_BIT);
 gl.viewport(0,0,canvas.width,canvas.height);
 
@@ -154,5 +169,11 @@ drawShape(windowVertices, windowIndices, [0.5,0.8,1,1]);   // windows
 drawShape(slabVertices, slabIndices, [0.89,0.2,0,1]);     // roof slab
 drawShape(midSlabVertices, midSlabIndices, [0.89,0.2,0,1]); // middle slab
 drawShape(baseSlabVertices, baseSlabIndices, [0.89,0.2,0,1]); // base slab
-drawShape(brickVertices, brickIndices, [0.7, 0.2, 0.2, 1]);
+drawShape(roadVertices, roadIndices, [0.48, 0.48, 0.48, 1]); // dark gray road
+drawShape(dividerVertices, dividerIndices, [0, 0.3, 0.3, 0]);
+
+
+    </script>
+</body>
+</html>
 ```
